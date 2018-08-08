@@ -45,7 +45,7 @@ Syntax: python %s <options>
 
 def parse_options():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "a:d:hp:r:vx:")
+        opts, args = getopt.getopt(sys.argv[1:], "a:d:hp:r:vx:q:o:s")
     except getopt.GetoptError, e:
         print str(e)
         show_help()
@@ -80,13 +80,15 @@ def parse_options():
     
     # Check and parse redirection host
     if 'o' in opts:
-        h = opts['r']
+        h = opts['o']
         if ':' not in h:
             p = 8880
         else:
             h,p = h.split(':')
             p = int(p)
         ps.opal_addr = (h, p)
+
+    ps.https = True if 's' in opts else False
 
     # Load an external plugin
     if 'x' in opts:
@@ -102,7 +104,7 @@ def main():
     q_host, q_port = pollstate.q_addr
     o_host, o_port = pollstate.opal_addr
 
-    pollworker = Pollworker(q_host, q_port, o_host, o_port)
+    pollworker = Pollworker(q_host, q_port, o_host, o_port, pollstate)
 
     while(True):
         req = pollworker.getNextRequest()

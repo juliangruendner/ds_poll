@@ -1,11 +1,12 @@
-import httplib
 from http import *
 from https import *
 import StringIO
+import httplib
+import ssl
 
 class Pollworker():
 
-    def __init__(self, q_host, q_port, o_host, o_port):
+    def __init__(self, q_host, q_port, o_host, o_port, pollstate):
         print("initiating worker")
         self.peer = False
         self.keepalive = False
@@ -15,22 +16,24 @@ class Pollworker():
         self.q_port = q_port
         self.o_host = o_host
         self.o_port = o_port
+        self.pollstate = pollstate
 
     def createConnection(self, host, port):
-        global pollstate
-
+        
         if self.target and self._host == host:
             return self.target
 
         try:
             # If a SSL tunnel was established, create a HTTPS connection to the server
-            if self.peer:
-                conn = httplib.HTTPSConnection(host, port)
+            if self.pollstate.https:
+                # FIXME - change to verify context
+                defContext = ssl._create_unverified_context()
+                conn = httplib.HTTPSConnection(host, port, context=defContext)
             else:
                 # HTTP Connection
                 conn = httplib.HTTPConnection(host, port)
-        except HTTPException as e:
-            pollstate.log.debug(e.__str__())
+        except Exception as e:
+            self.pollstate.log.debug(e.__str__())
 
         # If we need a persistent connection, add the socket to the dictionary
         if self.keepalive:
@@ -87,7 +90,6 @@ class Pollworker():
 
 
     def getNextRequest(self):
-
         q_conn = self.createConnection(self.q_host, self.q_port)
         q_conn.request("GET","/?getQueuedRequest=True")
         res = self._getresponse(q_conn)
