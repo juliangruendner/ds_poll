@@ -8,9 +8,8 @@ class Pollworker():
 
     def __init__(self, q_host, q_port, o_host, o_port, pollstate):
         print("initiating worker")
-        self.peer = False
-        self.keepalive = False
         self.target = None
+        self.keepalive = False
 
         self.q_host = q_host
         self.q_port = q_port
@@ -85,9 +84,6 @@ class Pollworker():
             res.addHeader('Content-Length', str(len(body)))
 
         return res
-
-
-
 
     def getNextRequest(self):
         q_conn = self.createConnection(self.q_host, self.q_port)
