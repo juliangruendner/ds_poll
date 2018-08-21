@@ -57,7 +57,7 @@ class Pollworker():
         conn.endheaders()
 
         if len(params) > 0:
-            conn.send(params.encode())
+            conn.send(params.encode('latin-1'))
 
     def _getresponse(self, conn):
         try:
@@ -93,7 +93,9 @@ class Pollworker():
             # FIXME: check the return value into the do* methods
             return None
 
-        body = res.read().decode('utf-8')
+        body = res.read()
+        body = body.decode('latin-1')
+
         if res.version == 10:
             proto = "HTTP/1.0"
         else:
