@@ -24,15 +24,16 @@
 
 import sys
 import getopt
-import httplib
+import http.client
 
 import sys
 sys.path.append('../ds_common')
+
 from ds_poll_util import *
 from ds_pollworker import *
 
 def show_help():
-    print """\
+    print("""\
 Syntax: python %s <options>
  -a <addr>         listen address (default 0.0.0.0)
  -d <filename>     on termination, dump requests & responses to file
@@ -41,13 +42,13 @@ Syntax: python %s <options>
  -o <host:[port]>  full address of opal server
  -v                be more verbose
  -x <filename>     load a ProxPy plugin
-""" % sys.argv[0]
+""" % sys.argv[0])
 
 def parse_options():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "a:d:hp:r:vx:q:o:s")
-    except getopt.GetoptError, e:
-        print str(e)
+    except getopt.GetoptError as e:
+        print(str(e))
         show_help()
         exit(1)
 
@@ -115,7 +116,7 @@ if __name__ == "__main__":
     global pollstate
     try:
         main()
-    except KeyboardInterrupt, e:
+    except KeyboardInterrupt as e:
         nreq, nres = pollstate.history.count()
         pollstate.log.info("Terminating... [%d requests, %d responses]" % (nreq, nres))
         if pollstate.dumpfile is not None:

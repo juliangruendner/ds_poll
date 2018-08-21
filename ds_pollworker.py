@@ -1,7 +1,7 @@
-from http import *
-from https import *
-import StringIO
-import httplib
+from ds_http import *
+from ds_https import *
+import io
+import http.client
 import ssl
 
 class Pollworker():
@@ -27,10 +27,10 @@ class Pollworker():
             if self.pollstate.https:
                 # FIXME - change to verify context
                 defContext = ssl._create_unverified_context()
-                conn = httplib.HTTPSConnection(host, port, context=defContext)
+                conn = http.client.HTTPSConnection(host, port, context=defContext)
             else:
                 # HTTP Connection
-                conn = httplib.HTTPConnection(host, port)
+                conn = http.client.HTTPConnection(host, port)
         except Exception as e:
             self.pollstate.log.debug(e.__str__())
 
@@ -46,9 +46,8 @@ class Pollworker():
     # get next request from queue server
 
     def _request(self, conn, method, path, params, headers):
-        global proxystate
         conn.putrequest(method, path, skip_host = True, skip_accept_encoding = True)
-        for header,v in headers.iteritems():
+        for header,v in headers.items():
             # auto-fix content-length
             if header.lower() == 'content-length':
                 conn.putheader(header, str(len(params)))
@@ -58,13 +57,13 @@ class Pollworker():
         conn.endheaders()
 
         if len(params) > 0:
-            conn.send(params)
+            conn.send(params.encode())
 
     def _getresponse(self, conn):
         try:
             res = conn.getresponse()
-        except httplib.HTTPException as e:
-            proxystate.log.debug(e.__str__())
+        except http.client.HTTPException as e:
+            self.pollstate.log.debug(e.__str__() + ": Error getting response")
             # FIXME: check the return value into the do* methods
             return None
 
@@ -76,26 +75,60 @@ class Pollworker():
 
         code = res.status
         msg = res.reason
-        headers = res.msg.headers
-        res = HTTPResponse(proto, code, msg, res.msg.headers, body)
+        headers = res.getheaders()
+        headers = dict((x, y) for x, y in headers)
+        res = HTTPResponse(proto, code, msg, headers, body)
 
-        if 'Transfer-Encoding: chunked\r\n' in headers:
+        if 'Transfer-Encoding' in headers.keys():
             res.removeHeader('Transfer-Encoding')
-            res.addHeader('Content-Length', str(len(body)))
+            res.addHeader('Content-Length', str(len(body)))   
+
+        return res
+
+    def _getresponse2(self, conn):
+        try:
+            res = conn.getresponse()
+        except http.client.HTTPException as e:
+            self.pollstate.log.debug(e.__str__() + ": Error getting response")
+            # FIXME: check the return value into the do* methods
+            return None
+
+        body = res.read().decode('utf-8')
+        if res.version == 10:
+            proto = "HTTP/1.0"
+        else:
+            proto = "HTTP/1.1"
+
+        code = res.status
+        msg = res.reason
+        headers = res.getheaders()
+        headers = dict((x, y) for x, y in headers)
+        res = HTTPResponse(proto, code, msg, headers, body)
+
+        if 'Transfer-Encoding' in headers.keys():
+            res.removeHeader('Transfer-Encoding')
+            res.addHeader('Content-Length', str(len(body)))   
 
         return res
 
     def getNextRequest(self):
+        
+        print(self.q_host, self.q_port)
+
+
         q_conn = self.createConnection(self.q_host, self.q_port)
         q_conn.request("GET","/?getQueuedRequest=True")
         res = self._getresponse(q_conn)
 
-        res_buf = StringIO.StringIO(res.body)
+        res_buf = io.BytesIO(res.body)
         req = HTTPRequest.build(res_buf)
+
+        #self.pollstate.log.info(req.getRequestLine())
+
         opal_conn = self.createConnection(self.o_host, self.o_port)
         self._request(opal_conn, req.getMethod(), req.getPath(), req.getBody(), req.headers)
-        res = self._getresponse(opal_conn)
-
+        
+        res = self._getresponse2(opal_conn)
         q_conn = self.createConnection(self.q_host, self.q_port)
         q_conn.request("POST", "/?setQueuedResponse=True", res.serialize())
 
