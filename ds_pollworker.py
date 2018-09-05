@@ -115,9 +115,6 @@ class Pollworker():
 
     def getNextRequest(self):
         
-        print(self.q_host, self.q_port)
-
-
         q_conn = self.createConnection(self.q_host, self.q_port)
         q_conn.request("GET","/?getQueuedRequest=True")
         res = self._getresponse(q_conn)
@@ -125,7 +122,8 @@ class Pollworker():
         res_buf = io.BytesIO(res.body)
         req = HTTPRequest.build(res_buf)
 
-        #self.pollstate.log.info(req.getRequestLine())
+        #self.pollstate.log.log_message_line(req)
+        self.pollstate.log.log_message_as_json(req)
 
         opal_conn = self.createConnection(self.o_host, self.o_port)
         self._request(opal_conn, req.getMethod(), req.getPath(), req.getBody(), req.headers)

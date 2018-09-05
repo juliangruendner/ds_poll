@@ -119,10 +119,10 @@ if __name__ == "__main__":
     except KeyboardInterrupt as e:
         nreq, nres = pollstate.history.count()
         pollstate.log.info("Terminating... [%d requests, %d responses]" % (nreq, nres))
-        if pollstate.dumpfile is not None:
+        '''if pollstate.dumpfile is not None:
             data = pollstate.history.dumpXML()
             f = open(pollstate.dumpfile, 'w')
             f.write(data)
-            f.close()
+            f.close()'''
 
 

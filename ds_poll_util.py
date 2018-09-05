@@ -1,4 +1,4 @@
-from logger import Logger
+from ds_poll_logger import PollLogger
 
 class PollState:
     def __init__(self, q_addr = ('localhost' ,8001), opal_addr = ('localhost', 8880)):
@@ -9,7 +9,7 @@ class PollState:
         self.opal_addr = opal_addr
 
         # Internal state
-        self.log        = Logger()
+        self.log        = PollLogger()
         self.history    = '' #HttpHistory()
         
         
