@@ -13,7 +13,7 @@ import logging
 import json
 from ds_http import *
 from ds_https import *
-from time import gmtime, strftime
+from time import gmtime, localtime, strftime
 
 COLOR_RED    = 31
 COLOR_GREEN  = 32
@@ -72,7 +72,7 @@ class PollLogger:
     
     
     def getLogfileName(self):
-        time = strftime("%Y-%m-%d", gmtime())
+        time = strftime("%Y-%m-%d", localtime())
         logfile = time + "_poll.log"
         return logfile
 
@@ -81,7 +81,7 @@ class PollLogger:
     def log_message_line(self, html_message):
         message = ""
         
-        time = strftime("%Y-%m-%d %H:%M:%S", gmtime())
+        time = strftime("%Y-%m-%d %H:%M:%S", localtime())
         req_line = "%s %s %s" % (html_message.method, html_message.url, html_message.proto)
         
         auth_header = html_message.getHeader('authorization')[0].split(" ")[1]
@@ -95,7 +95,7 @@ class PollLogger:
 
     def log_message_as_json(self, html_message):
 
-        time = strftime("%Y-%m-%d %H:%M:%S", gmtime())
+        time = strftime("%Y-%m-%d %H:%M:%S", localtime())
         req_line = "%s %s %s" % (html_message.method, html_message.url, html_message.proto)
         
         auth_header = html_message.getHeader('authorization')[0].split(" ")[1]

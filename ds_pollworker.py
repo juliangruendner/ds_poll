@@ -3,6 +3,7 @@ from ds_https import *
 import io
 import http.client
 import ssl
+import sys
 
 class Pollworker():
 
@@ -118,6 +119,9 @@ class Pollworker():
         q_conn = self.createConnection(self.q_host, self.q_port)
         q_conn.request("GET","/?getQueuedRequest=True")
         res = self._getresponse(q_conn)
+        
+        if res.code == 204:
+            return
 
         res_buf = io.BytesIO(res.body)
         req = HTTPRequest.build(res_buf)
