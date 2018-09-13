@@ -70,46 +70,49 @@ class PollLogger:
                 print("----------------END---------------\n")
 
     
-    
     def getLogfileName(self):
         time = strftime("%Y-%m-%d", localtime())
         logfile = time + "_poll.log"
         return logfile
 
 
-
-    def log_message_line(self, html_message):
-        message = ""
+    def get_log_message_attributes(self, html_message):
         
         time = strftime("%Y-%m-%d %H:%M:%S", localtime())
         req_line = "%s %s %s" % (html_message.method, html_message.url, html_message.proto)
         
-        auth_header = html_message.getHeader('authorization')[0].split(" ")[1]
-        decoded_auth_string = str(base64.b64decode(auth_header),'latin-1')
-        user = decoded_auth_string.split(":")[0]
+        user = "none specified"
+        auth_header = html_message.getHeader('authorization')
+
+        if len(auth_header) > 0 :
+            auth_header = html_message.getHeader('authorization')[0].split(" ")[1]
+            decoded_auth_string = str(base64.b64decode(auth_header),'latin-1')
+            user = decoded_auth_string.split(":")[0]
+        
         body = html_message.getBody()
 
-        message = time  + self.separator + req_line + self.separator + user + self.separator + body + self.separator
+        my_message_dict = {"time" : time, "req_line" : req_line, "user" : user, "body": body}
+
+        return my_message_dict
+
+    def log_message_line(self, html_message):
+        message = ""
+
+        my_message_dict = self.get_log_message_attributes(html_message)
+
+        for value in my_message_dict.values():
+            message = message + value + self.separator
+        
         self.write_to_log(message)
     
 
     def log_message_as_json(self, html_message):
 
-        time = strftime("%Y-%m-%d %H:%M:%S", localtime())
-        req_line = "%s %s %s" % (html_message.method, html_message.url, html_message.proto)
-        
-        auth_header = html_message.getHeader('authorization')[0].split(" ")[1]
-        decoded_auth_string = str(base64.b64decode(auth_header),'latin-1')
-        user = decoded_auth_string.split(":")[0]
-        body = html_message.getBody()
-
-        my_message_dict = {"time" : time, "req_line" : req_line, "user" : user, "body": body}
+        my_message_dict = self.get_log_message_attributes(html_message)
         self.write_to_log(json.dumps(my_message_dict))
-
 
     def write_to_log(self, message):
         logfile = self.getLogfileName()
-
         logging.basicConfig(filename=self.logdir + "/logging/" + logfile,level=logging.INFO)
         logging.info(message)
         
