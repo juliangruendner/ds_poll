@@ -25,6 +25,7 @@
 import sys
 import getopt
 import http.client
+import _thread
 
 import sys
 sys.path.append('../ds_common')
@@ -42,11 +43,12 @@ Syntax: python %s <options>
  -o <host:[port]>  full address of opal server
  -v                be more verbose
  -x <filename>     load a ProxPy plugin
+ -t <number>       number of threads to create for polling
 """ % sys.argv[0])
 
 def parse_options():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "a:d:hp:r:vx:q:o:s")
+        opts, args = getopt.getopt(sys.argv[1:], "a:d:hp:r:vx:q:o:st:")
     except getopt.GetoptError as e:
         print(str(e))
         show_help()
@@ -95,22 +97,36 @@ def parse_options():
     if 'x' in opts:
         ps.plugin = PollPlugin(opts['x'])
 
+    ps.n_threads = 2
+    if 't' in opts:
+         ps.n_threads = opts['t']
+
     return ps
 
-
-def main():
-    global pollstate
-    pollstate = parse_options()
+def pollworker_exec(threadName, pollstate):
+    print(threadName, file=sys.stderr)
     
     q_host, q_port = pollstate.q_addr
     o_host, o_port = pollstate.opal_addr
 
-    pollworker = Pollworker(q_host, q_port, o_host, o_port, pollstate)
+    pollworker = Pollworker(q_host, q_port, o_host, o_port, pollstate, threadName)
 
     while(True):
         req = pollworker.getNextRequest()
 
 
+def main():
+    # Create two threads as follows
+    global pollstate
+    pollstate = parse_options()
+    print(pollstate.n_threads, file=sys.stderr)
+    try:
+        for x in range(0,int(pollstate.n_threads)):
+            _thread.start_new_thread( pollworker_exec, ("Thread-" + str(x), pollstate) )
+    except:
+        print ("Error: unable to start thread")
+    while 1:
+        pass
 
 if __name__ == "__main__":
     global pollstate

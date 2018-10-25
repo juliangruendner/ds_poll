@@ -7,7 +7,7 @@ import sys
 
 class Pollworker():
 
-    def __init__(self, q_host, q_port, o_host, o_port, pollstate):
+    def __init__(self, q_host, q_port, o_host, o_port, pollstate, threadName):
         print("initiating worker")
         self.target = None
         self.keepalive = False
@@ -17,6 +17,7 @@ class Pollworker():
         self.o_host = o_host
         self.o_port = o_port
         self.pollstate = pollstate
+        self.threadName = threadName
 
     def createConnection(self, host, port):
         
@@ -125,6 +126,10 @@ class Pollworker():
 
         res_buf = io.BytesIO(res.body)
         req = HTTPRequest.build(res_buf)
+        
+        # get Uuid to add to response and remove from request
+        reqId = req.getHeader('reqId')[0]
+        req.removeHeader('reqId')
 
         #self.pollstate.log.log_message_line(req)
         self.pollstate.log.log_message_as_json(req)
@@ -133,8 +138,9 @@ class Pollworker():
         self._request(opal_conn, req.getMethod(), req.getPath(), req.getBody(), req.headers)
         
         res = self._getresponse2(opal_conn)
+
         q_conn = self.createConnection(self.q_host, self.q_port)
-        q_conn.request("POST", "/?setQueuedResponse=True", res.serialize())
+        q_conn.request("POST", "/?setQueuedResponse=True&reqId=" +  reqId, res.serialize())
 
 
 
