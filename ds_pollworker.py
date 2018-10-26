@@ -30,10 +30,16 @@ class Pollworker():
                 # FIXME - change to verify context
                 defContext = ssl._create_unverified_context()
                 conn = http.client.HTTPSConnection(host, port, context=defContext)
+                #capath = "/Users/juliangruendner/phd/code/ds_develop/ds_queue/cert/ncerts"
+                #cafile = "/Users/juliangruendner/phd/code/ds_develop/ds_queue/cert/ncerts/test.crt"
+                #conn = http.client.HTTPSConnection(host, port, key_file=key ,cert_file=crt)
+                #defContext = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH, cafile=cafile)
+                #conn = http.client.HTTPSConnection(host, port, context=defContext)
             else:
                 # HTTP Connection
                 conn = http.client.HTTPConnection(host, port)
         except Exception as e:
+            print(e, file=sys.stderr)
             self.pollstate.log.debug(e.__str__())
 
         # If we need a persistent connection, add the socket to the dictionary

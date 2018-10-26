@@ -25,8 +25,7 @@
 import sys
 import getopt
 import http.client
-import _thread
-
+import threading
 import sys
 sys.path.append('../ds_common')
 
@@ -120,12 +119,16 @@ def main():
     global pollstate
     pollstate = parse_options()
     print(pollstate.n_threads, file=sys.stderr)
+    threads = []
     try:
-        for x in range(0,int(pollstate.n_threads)):
-            _thread.start_new_thread( pollworker_exec, ("Thread-" + str(x), pollstate) )
+        for i in range(0,int(pollstate.n_threads)):
+            #_thread.start_new_thread( pollworker_exec, ("Thread-" + str(x), pollstate) )
+            t = threading.Thread(target=pollworker_exec, args=("Thread-" + str(i), pollstate))
+            threads.append(t)
+            t.start()
     except:
-        print ("Error: unable to start thread")
-    while 1:
+        print ("Error: unable to start threads")
+    while threading.active_count() > 1:
         pass
 
 if __name__ == "__main__":
