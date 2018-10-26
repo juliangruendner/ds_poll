@@ -115,19 +115,16 @@ def pollworker_exec(threadName, pollstate):
 
 
 def main():
-    # Create two threads as follows
     global pollstate
     pollstate = parse_options()
-    print(pollstate.n_threads, file=sys.stderr)
     threads = []
     try:
         for i in range(0,int(pollstate.n_threads)):
-            #_thread.start_new_thread( pollworker_exec, ("Thread-" + str(x), pollstate) )
             t = threading.Thread(target=pollworker_exec, args=("Thread-" + str(i), pollstate))
             threads.append(t)
             t.start()
     except:
-        print ("Error: unable to start threads")
+        print ("Error: unable to start threads", file=sys.stderr)
     while threading.active_count() > 1:
         pass
 
