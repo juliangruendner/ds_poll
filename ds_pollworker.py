@@ -8,10 +8,6 @@ import sys
 class Pollworker():
 
     def __init__(self, q_host, q_port, o_host, o_port, pollstate, threadName):
-        print("initiating worker")
-        self.target = None
-        self.keepalive = False
-
         self.q_host = q_host
         self.q_port = q_port
         self.o_host = o_host
@@ -20,21 +16,14 @@ class Pollworker():
         self.threadName = threadName
 
     def createConnection(self, host, port):
-        
-        if self.target and self._host == host:
-            return self.target
 
         try:
-            # If a SSL tunnel was established, create a HTTPS connection to the server
             if self.pollstate.https:
-                # FIXME - change to verify context
                 defContext = ssl._create_unverified_context()
                 conn = http.client.HTTPSConnection(host, port, context=defContext)
-                #capath = "/Users/juliangruendner/phd/code/ds_develop/ds_queue/cert/ncerts"
-                #cafile = "/Users/juliangruendner/phd/code/ds_develop/ds_queue/cert/ncerts/test.crt"
-                #conn = http.client.HTTPSConnection(host, port, key_file=key ,cert_file=crt)
-                #defContext = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH, cafile=cafile)
-                #conn = http.client.HTTPSConnection(host, port, context=defContext)
+                # cafile = "/Users/juliangruendner/phd/code/ds_develop/ds_queue/cert/ncerts/test.crt"
+                # defContext = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH, cafile=cafile)
+                # conn = http.client.HTTPSConnection(host, port, context=defContext)
             else:
                 # HTTP Connection
                 conn = http.client.HTTPConnection(host, port)
@@ -42,21 +31,14 @@ class Pollworker():
             print(e, file=sys.stderr)
             self.pollstate.log.debug(e.__str__())
 
-        # If we need a persistent connection, add the socket to the dictionary
-        if self.keepalive:
-            self.target = conn
-
         self._host = host
         self._port = port
-            
+
         return conn
-    
-    # get next request from queue server
 
     def _request(self, conn, method, path, params, headers):
-        conn.putrequest(method, path, skip_host = True, skip_accept_encoding = True)
-        for header,v in headers.items():
-            # auto-fix content-length
+        conn.putrequest(method, path, skip_host=True, skip_accept_encoding=True)
+        for header, v in headers.items():
             if header.lower() == 'content-length':
                 conn.putheader(header, str(len(params)))
             else:
@@ -72,7 +54,6 @@ class Pollworker():
             res = conn.getresponse()
         except http.client.HTTPException as e:
             self.pollstate.log.debug(e.__str__() + ": Error getting response")
-            # FIXME: check the return value into the do* methods
             return None
 
         body = res.read()
@@ -89,20 +70,19 @@ class Pollworker():
 
         if 'Transfer-Encoding' in headers.keys():
             res.removeHeader('Transfer-Encoding')
-            res.addHeader('Content-Length', str(len(body)))   
+            res.addHeader('Content-Length', str(len(body)))
 
         return res
 
-    def _getresponse2(self, conn):
+    def _getresponse_with_body_as_string(self, conn):
         try:
             res = conn.getresponse()
         except http.client.HTTPException as e:
             self.pollstate.log.debug(e.__str__() + ": Error getting response")
-            # FIXME: check the return value into the do* methods
             return None
 
         body = res.read()
-        body = body.decode('latin-1')
+        body = body.decode('latin-1')# add body decoding to convert to bytes
 
         if res.version == 10:
             proto = "HTTP/1.0"
@@ -117,14 +97,14 @@ class Pollworker():
 
         if 'Transfer-Encoding' in headers.keys():
             res.removeHeader('Transfer-Encoding')
-            res.addHeader('Content-Length', str(len(body)))   
+            res.addHeader('Content-Length', str(len(body)))
 
         return res
 
     def getNextRequest(self):
-        
+
         q_conn = self.createConnection(self.q_host, self.q_port)
-        q_conn.request("GET","/?getQueuedRequest=True")
+        q_conn.request("GET", "/?getQueuedRequest=True")
         res = self._getresponse(q_conn)
 
         if res.code == 204:
@@ -132,24 +112,18 @@ class Pollworker():
 
         res_buf = io.BytesIO(res.body)
         req = HTTPRequest.build(res_buf)
-        
+
         # get Uuid to add to response and remove from request
         reqId = req.getHeader('reqId')[0]
         req.removeHeader('reqId')
 
-        #self.pollstate.log.log_message_line(req)
+        # self.pollstate.log.log_message_line(req)
         self.pollstate.log.log_message_as_json(req)
 
         opal_conn = self.createConnection(self.o_host, self.o_port)
         self._request(opal_conn, req.getMethod(), req.getPath(), req.getBody(), req.headers)
-        
-        res = self._getresponse2(opal_conn)
+
+        res = self._getresponse_with_body_as_string(opal_conn)
 
         q_conn = self.createConnection(self.q_host, self.q_port)
-        q_conn.request("POST", "/?setQueuedResponse=True&reqId=" +  reqId, res.serialize())
-
-
-
-
-
-
+        q_conn.request("POST", "/?setQueuedResponse=True&reqId=" + reqId, res.serialize())
