@@ -21,8 +21,6 @@ from ds_pollworker import Pollworker
 def show_help():
     print("""\
 Syntax: python %s <options>
- -a <addr>         listen address (default 0.0.0.0)
- -d <filename>     on termination, dump requests & responses to file
  -h                show this help screen
  -q <host:[port]>  full address of queue (default = 8)
  -o <host:[port]>  full address of opal server
@@ -48,12 +46,6 @@ def parse_options():
 
     if 'v' in opts:
         ps.log.verbosity += 1
-
-    if 'd' in opts:
-        ps.dumpfile = opts['d']
-
-    if 'a' in opts:
-        ps.listenaddr = opts['a']
 
     # Check and parse queue host
     if 'q' in opts:

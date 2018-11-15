@@ -82,7 +82,7 @@ class Pollworker():
             return None
 
         body = res.read()
-        body = body.decode('latin-1')# add body decoding to convert to bytes
+        body = body.decode('latin-1')  # add body decoding to convert to bytes
 
         if res.version == 10:
             proto = "HTTP/1.0"
