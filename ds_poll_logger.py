@@ -11,8 +11,7 @@ import os
 import threading
 import logging
 import json
-from ds_http import *
-from ds_https import *
+from ds_http.ds_http import HTTPRequest, HTTPResponse
 from time import gmtime, localtime, strftime
 import base64
 
