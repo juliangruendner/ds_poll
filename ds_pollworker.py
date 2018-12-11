@@ -1,9 +1,8 @@
-from ds_http import *
-from ds_https import *
 import io
 import http.client
 import ssl
 import sys
+from ds_http.ds_http import HTTPRequest, HTTPResponse
 
 class Pollworker():
 

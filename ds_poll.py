@@ -14,7 +14,6 @@ import getopt
 import http.client
 import threading
 import sys
-sys.path.append('../ds_common')
 from ds_poll_util import PollState
 from ds_pollworker import Pollworker
 
