@@ -1,3 +1,13 @@
+"""
+  Copyright notice
+  ================
+  
+  Copyright (C) 2018
+      Julian Gruendner   <juliangruendner@googlemail.com>
+      License: GNU, see LICENSE for more details.
+  
+"""
+
 import io
 import http.client
 import ssl

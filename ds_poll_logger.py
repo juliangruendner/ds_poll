@@ -1,10 +1,11 @@
 """
   Copyright notice
   ================
-
+  
   Copyright (C) 2018
-      Julian Gruendner     <julian.gruendner@fau.de>
-
+      Julian Gruendner   <juliangruendner@googlemail.com>
+      License: GNU, see LICENSE for more details.
+  
 """
 
 import os
