@@ -17,6 +17,7 @@ import threading
 import sys
 from ds_poll_util import PollState
 from ds_pollworker import Pollworker
+import time
 
 def show_help():
     print("""\
@@ -75,9 +76,17 @@ def parse_options():
 
     return ps
 
-def pollworker_exec(threadName, pollstate):
-    print(threadName, file=sys.stderr)
 
+def pollworker_req_handler(threadName, pollstate, req):
+    q_host, q_port = pollstate.q_addr
+    o_host, o_port = pollstate.opal_addr
+
+    pollworker = Pollworker(q_host, q_port, o_host, o_port, pollstate, threadName)
+    pollworker.handleRequest(req)
+
+
+def pollworker_exec(threadName, pollstate):
+    
     q_host, q_port = pollstate.q_addr
     o_host, o_port = pollstate.opal_addr
 
@@ -85,6 +94,12 @@ def pollworker_exec(threadName, pollstate):
 
     while(True):
         req = pollworker.getNextRequest()
+        try:
+            t = threading.Thread(target=pollworker_req_handler, daemon=True, args=("Thread-", pollstate, req))
+            t.start()
+        except Exception as e:
+            pollstate.log.error(e.__str__() + ": Error on starting response handler")
+
 
 
 def main():
@@ -93,12 +108,13 @@ def main():
     threads = []
     try:
         for i in range(0, int(pollstate.n_threads)):
-            t = threading.Thread(target=pollworker_exec, args=("Thread-" + str(i), pollstate))
+            t = threading.Thread(target=pollworker_exec, daemon=True, args=("Thread-" + str(i), pollstate))
             threads.append(t)
             t.start()
     except Exception as e:
         pollstate.log.error(e.__str__() + ": Error on starting poll threads")
     while threading.active_count() > 1:
+        time.sleep(10)
         pass
 
 

@@ -115,6 +115,9 @@ class Pollworker():
         q_conn = self.createConnection(self.q_host, self.q_port)
         q_conn.request("GET", "/?getQueuedRequest=True")
         res = self._getresponse(q_conn)
+        return res
+
+    def handleRequest(self, res):
 
         if res.code == 204:
             return
