@@ -13,8 +13,6 @@ import http.client
 import ssl
 import sys
 from ds_http.ds_http import HTTPRequest, HTTPResponse
-CA_FILE = 'cacert.pem'
-CA_PATH = '/etc/ssl/certs'
 
 class Pollworker():
 
@@ -29,20 +27,14 @@ class Pollworker():
     def createConnection(self, host, port):
 
         try:
-            if self.pollstate.https:
-                if self.pollstate.secure and host != "datashield_opal":
-                    
-                    context = ssl.create_default_context(capath=CA_PATH)
-                else:
-                    context = ssl._create_unverified_context()
-
-                conn = http.client.HTTPSConnection(host, port, context=context)
-            else:
-                # HTTP Connection
-                conn = http.client.HTTPConnection(host, port)
+            # defContext = ssl._create_unverified_context()
+            context = ssl.create_default_context()
+            conn = http.client.HTTPSConnection(host, port, context=context)
+            # cafile = "/Users/juliangruendner/phd/code/ds_develop/ds_queue/cert/ncerts/test.crt"
+            # defContext = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH, cafile=cafile)
+            # conn = http.client.HTTPSConnection(host, port, context=defContext)
         except Exception as e:
             print(e, file=sys.stderr)
-            self.pollstate.log.debug(e.__str__())
 
         self._host = host
         self._port = port
@@ -143,3 +135,24 @@ class Pollworker():
 
         q_conn = self.createConnection(self.q_host, self.q_port)
         q_conn.request("POST", "/?setQueuedResponse=True&reqId=" + reqId, res.serialize())
+
+
+
+def main():
+    try:
+
+        pollworker = Pollworker("gruendner.imi.uni-erlangen.de", "443", "localhost", "8843", "pollstate", "buhu")
+        conn = pollworker.createConnection("gruendner.imi.uni-erlangen.de", 443)
+        # conn = pollworker.createConnection("google.de", "443")
+        conn.request("GET", "/?getQueuedRequest=True")
+
+    except Exception as e:
+        print("exception", e)
+
+
+if __name__ == "__main__":
+    global pollstate
+    try:
+        main()
+    except KeyboardInterrupt as e:
+        pollstate.log.info("Terminating... ")

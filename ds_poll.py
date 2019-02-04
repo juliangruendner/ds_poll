@@ -27,11 +27,13 @@ Syntax: python %s <options>
  -o <host:[port]>  full address of opal server
  -v                be more verbose
  -t <number>       number of threads to create for polling
+ -s                set ssl context to verify server side
+ -c                if option given sets the ssl context to verify server certificate
 """ % sys.argv[0])
 
 def parse_options():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "a:d:hp:r:vq:o:st:")
+        opts, args = getopt.getopt(sys.argv[1:], "a:d:hp:r:vq:o:sct:")
     except getopt.GetoptError as e:
         print(str(e))
         show_help()
@@ -69,6 +71,8 @@ def parse_options():
         ps.opal_addr = (h, p)
 
     ps.https = True if 's' in opts else False
+
+    ps.secure = True if 'c' in opts else False
 
     ps.n_threads = 2
     if 't' in opts:
