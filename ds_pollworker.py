@@ -13,7 +13,6 @@ import http.client
 import ssl
 import sys
 from ds_http.ds_http import HTTPRequest, HTTPResponse
-CA_FILE = 'cacert.pem'
 CA_PATH = '/etc/ssl/certs'
 
 class Pollworker():
