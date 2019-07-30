@@ -13,6 +13,7 @@ import http.client
 import ssl
 import sys
 from ds_http.ds_http import HTTPRequest, HTTPResponse
+import requests
 CA_PATH = '/etc/ssl/certs'
 
 class Pollworker():
@@ -140,5 +141,6 @@ class Pollworker():
 
         res = self._getresponse_with_body_as_string(opal_conn)
 
-        q_conn = self.createConnection(self.q_host, self.q_port)
-        q_conn.request("POST", "/?setQueuedResponse=True&reqId=" + reqId, res.serialize())
+        payload = res.serialize()
+        url = "https://" + str(self.q_host) + ":" + str(self.q_port) + "?setQueuedResponse=True&reqId=" + reqId
+        requests.post(url, data=payload, verify=False)
